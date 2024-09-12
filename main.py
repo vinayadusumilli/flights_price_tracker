@@ -1,21 +1,20 @@
-from dotenv import dotenv_values
-
+from pprint import pprint
+import time
+from data_manager import DataManager
 from flight_data import FlightData
+from flight_search import FlightSearch
 
-SHEETY_HOST_DOMAIN = "https://api.sheety.co/"
-SHEETY_ENDPOINT = "/flightDeals/prices"
+data_manager = DataManager()
+flight_data = FlightData()
+flight_search = FlightSearch(flight_data)
 
-config = {
-    **dotenv_values(".env.shared"),
-    **dotenv_values(".env.secret")
-}
+sheet_data = data_manager.get_destination_data()
+for flight_data in sheet_data:
+    if flight_data["iataCode"] == "":
+        iata_code = flight_search.get_iata_code(flight_data["city"])
+        time.sleep(4)
+        flight_data["iataCode"] = iata_code
+pprint(f"sheet_data:\n {sheet_data}")
+data_manager.destination_data = sheet_data
+data_manager.update_iata_code()
 
-amadeus_api_key = config["MY_AMADEUS_API_KEY"]
-amadeus_secret_key = config["MY_AMADEUS_SECRET_KEY"]
-sheety_api = config["MY_SHEETY_API"]
-sheety_api_key = config["MY_SHEETY_API_KEY"]
-
-sheety_url = f"{SHEETY_HOST_DOMAIN}{sheety_api}{SHEETY_ENDPOINT}"
-
-flightdata = FlightData(url=sheety_url, api_key=sheety_api_key)
-flightdata.get_flight_data()
